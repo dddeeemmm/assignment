@@ -1,0 +1,7 @@
+{{- if .Values.configmap_data }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "helm-test.fullname" . }}
+data: {{ .Values.configmap_data | toYaml | nindent 2 }}
+{{- end }}

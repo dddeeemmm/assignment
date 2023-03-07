@@ -1,0 +1,156 @@
+# Default values for helm-test.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: nginx
+  pullPolicy: IfNotPresent
+  tag:        ""
+
+imagePullSecrets: []
+nameOverride:     ""
+fullnameOverride: ""
+
+serviceAccount:
+  create:      true
+  annotations: {}
+  name:        ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: NodePort
+  port: 80
+
+ingress:
+  enabled:     false
+  className:   ""
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path:     /
+          pathType: ImplementationSpecific
+  tls: []
+
+resources:
+   limits:
+     cpu:    100m
+     memory: 128Mi
+   requests:
+     cpu:    100m
+     memory: 128Mi
+
+autoscaling:
+  enabled:                        false
+  minReplicas:                    1
+  maxReplicas:                    100
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+volumeMounts:
+  - mountPath: /etc/nginx/nginx.conf
+    name:      nginx
+    subPath:   nginx.conf
+  - mountPath: /etc/nginx/robots.txt
+    name:      nginx
+    subPath:   nginx.conf
+
+volumes:
+  - name:          nginx
+    configMap:
+      defaultMode: 0744
+      name:        nginx
+      items:
+        - key:     nginx.conf
+          path:    nginx.conf
+        - key:     robots.txt
+          path:    robots.txt
+
+configmap_data:
+  nginx.conf: |
+    user                  nginx;
+    worker_processes      auto;
+    error_log             /var/log/nginx/error.log warn;
+    pid                   /var/run/nginx.pid;
+    events {
+      worker_connections  1024;
+    }
+
+    http {
+      include       /etc/nginx/mime.types;
+      default_type  application/octet-stream;
+
+      types {
+        application/wasm wasm;
+      }
+
+      log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                        '$status $body_bytes_sent "$http_referer" '
+                        '"$http_user_agent" "$http_x_forwarded_for"';
+      access_log         /var/log/nginx/access.log  main;
+      sendfile           on;
+      #tcp_nopush        on;
+      keepalive_timeout  65;
+
+      server {
+        listen      80;
+        server_name _;
+        charset     utf-8;
+
+        location / {
+          expires   0;
+          try_files $uri $uri /index.html;
+          root      /usr/share/nginx/html;
+        }
+
+        location = /robots.txt {
+          add_header Content-Type text/plain;
+          return 200 "User-agent: *\nDisallow: /\nClean-param: cm_id&gtm_debug&external_browser_redirect&int&wbraid&etext&fb&partner_sale&keyword&matchtype&device&placement&utm_partner_id&utm_target&subid&azs1&source&utm_salary&target&frm&stat-id&test-tag&format-type&actual-format&banner-test-tags&target-ref&poputi1&amp&a_id&dop_id&__branch_mobile_deepview_type&kino&token&smartleads_src&smartleads_pid&_RSSID_ /\nSitemap: Sitemap: https://st-gpbonus.ogon.ru/sitemap.xml\n";
+        }
+      }
+    }
+  robots.txt: |
+    Mozilla/4.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 (compatible; AdsBot-Google-Mobile; +http://www.google.com/mobile/adsbot.html)
+    AdsBot-Google-Mobile-Apps
+    Mozilla/4.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)
+    AdsBot-Google (+http://www.google.com/adsbot.html)
+    Mozilla/4.0 (Linux; Android 4.2.1; en-us; Nexus 5 Build/JOP40D) AppleWebKit/535.19 (KHTML, like Gecko; googleweblight) Crome/38.0.1025.166 Mobile Safari/535.19
+    APIs-Google (+https://developers.google.com/webmasters/APIs-Google.html)
+    Mozilla/4.0 (Linux; Android 5.0; SM-G920A) AppleWebKit (KHTML, like Gecko) Crome Mobile Safari (compatible; AdsBot-Google-Mobile; +http://www.google.com/mobile/adsbot.html)
+    FeedFetcher-Google; (+http://www.google.com/feedfetcher.html)
+    Mozilla/4.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Crome/41.0.2272.96 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)
+    Googlebot-Image/1.0
+    Mozilla/4.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Crome/41.0.2272.96 Mobile Safari/537.36 (compatible; Google Search Console)
+    Googlebot-News
+    Mozilla/4.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Crome/W.X.Y.Z
+    Googlebot-Video/1.0
+    Mozilla/4.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko)
+    Googlebot/2.1 (+http://www.google.com/bot.html)
+    Mozilla/4.0 (Linux; Android 7.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Crome/59.0.3071.125 Mobile Safari/537.36 (compatible; Google-Read-Aloud; +https://developers.google.com/search/docs/advanced/crawling/overview-google-crawlers)
+    Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)
+    Mozilla/4.0 (Linux; Android 8.0; Pixel 2 Build/OPD3.170816.012; Storebot-Google/1.0) AppleWebKit/537.36 (KHTML, like Gecko) Crome/81.0.4044.138 Mobile Safari/537.36
+    Mozilla/4.0 (Linux; Android 11; Pixel 2; DuplexWeb-Google/1.0) AppleWebKit/537.36 (KHTML, like Gecko) Crome/86.0.4240.193 Mobile Safari/537.36
+    Mozilla/4.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Crome/41.0.2272.118 Safari/537.36 (compatible; Google-Read-Aloud; +https://developers.google.com/search/docs/advanced/crawling/overview-google-crawlers)
+    Mozilla/4.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Crome/49.0.2623.75 Safari/537.36 Google Favicon
+    Mozilla/4.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko; Google Search Console) Crome/41.0.2272.118 Safari/537.36
+    Mozilla/4.0 (X11; Linux x86_64; Storebot-Google/1.0) AppleWebKit/537.36 (KHTML, like Gecko) Crome/79.0.3945.88 Safari/537.36
+    AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +http://www.google.com/bot.html) Crome/W.X.Y.Z Safari/537.36
+    Allow: *
+    Disallow: /login/
+    Disallow: /card/
+    Disallow: /fotos/
+    Disallow: /temp/
+    Disallow: /search/
+    Disallow: /*.pdf$

@@ -1,0 +1,14 @@
+---
+
+k8s_version:             '1.20.0'
+k8s_cni_version:         '0.8.7-0'
+k8s_tools:               [ 'https://raw.githubusercontent.com/ahmetb/kubectx/master/kubens' ]
+k8s_docker_packages:     [ 'docker-ce', 'docker-ce-cli', 'containerd.io' ]
+k8s_kubernetes_packages: [ 'kubernetes-cni-{{ k8s_cni_version }}', 'kubelet-{{ k8s_version }}', 'kubeadm-{{ k8s_version }}', 'kubectl-{{ k8s_version }}', 'python3-pip', 'python3-devel' ]
+k8s_pip_requirements:
+  - { name: 'openshift',        version: '0.11.2' }
+  - { name: 'docker-py',        version: '1.10.6' }
+  - { name: 'kubernetes',       version: '12.0.0' }
+  - { name: 'urllib3',          version: '1.26.4' }
+  - { name: 'websocket-client', version: '0.58.0' }
+  - { name: 'cachetools',       version: '4.2.1'  }

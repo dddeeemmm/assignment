@@ -1,0 +1,56 @@
+---
+
+- name: add docker repo
+  get_url:
+    url: https://download.docker.com/linux/centos/docker-ce.repo
+    dest: /etc/yum.repos.d/docker-ce.repo
+  retries: 3
+
+- name: install k8s_docker_packages
+  package:
+    name: '{{ k8s_docker_packages }}'
+
+- name: load br_netfilter
+  modprobe:
+    name: br_netfilter
+
+- name: add k8s repo
+  copy:
+    src: kubernetes.repo
+    dest: /etc/yum.repos.d/kubernetes.repo
+
+- name: install k8s_kubernetes_packages
+  package:
+    name: '{{ k8s_kubernetes_packages }}'
+    disable_excludes: kubernetes
+
+- name: install k8s_pip_requirements
+  pip:
+    name: '{{ item.name }}'
+    version: '{{ item.version }}'
+    executable: pip3
+  loop: '{{ k8s_pip_requirements }}'
+  when: inventory_hostname in groups ['k8s_masters']
+
+- name: install k8s tools
+  get_url:
+    url: '{{ item }}'
+    dest: /bin/
+    mode: '+x'
+  loop: '{{ k8s_tools }}'
+  when: inventory_hostname in groups ['k8s_masters']
+
+- name: add specific flags for kubelet
+  template:
+    src: sysconfig_kubelet.j2
+    dest: /etc/sysconfig/kubelet
+    owner: root
+    group: root
+    mode: 0644
+
+- name: enable and start kubelet and docker
+  systemd:
+    name: '{{ item }}'
+    enabled: no
+    state: started
+  loop: [ kubelet, docker ]

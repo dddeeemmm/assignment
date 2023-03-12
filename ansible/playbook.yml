@@ -1,0 +1,6 @@
+---
+
+- hosts: 'k8s_masters'
+  roles:
+    - name:   'k8s'
+      become: 'on'

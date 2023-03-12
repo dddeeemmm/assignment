@@ -1,0 +1,205 @@
+---
+
+- name: check init masters
+  stat:
+    path: /etc/kubernetes/admin.conf
+  when: inventory_hostname in groups [ 'k8s_masters' ]
+  register: k8s_check_init_masters
+
+
+- block:
+
+    - name: init first master
+      shell: '{{ k8s_kubeadm_init_command }}'
+      async: 900
+      poll: 1
+      register: k8s_init_first_master
+
+    - debug:
+        msg: '{{ k8s_init_first_master.stdout }}'
+
+  any_errors_fatal: true
+  when:
+    - inventory_hostname == k8s_master_node
+    - not k8s_check_init_masters.stat.exists
+ 
+- block:
+
+    - name: mkdir /etc/kubernetes/addons
+      file:
+        path: /etc/kubernetes/addons
+        state: directory
+
+    - name: copy addons manifests
+      template:
+        src: '{{ item }}'
+        dest: /etc/kubernetes/addons/{{ item | basename | regex_replace ( '\.j2$', '' ) }}
+      loop:
+        - kube-flannel.yaml.j2
+        - kube-state-metrics.yaml.j2
+
+    - name: install addons
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+      shell: kubectl apply -f /etc/kubernetes/addons
+  
+  any_errors_fatal: true
+  when:  
+    - k8s_addons_install | bool
+    - inventory_hostname == k8s_master_node
+
+#- block:
+#
+#    - name: get join command
+#      shell: kubeadm token create --print-join-command
+#      register: k8s_get_join_command
+#
+#    - debug:
+#        msg: '{{ k8s_get_join_command.stdout }}'
+#
+#    - name: set k8s_join_command
+#      set_fact:
+#        k8s_join_command: '{{ k8s_get_join_command.stdout }}'
+#
+#    - name: get master ca.crt
+#      slurp:
+#        src: /etc/kubernetes/pki/ca.crt
+#      register: k8s_get_master_ca_crt
+#
+#    - name: set k8s_get_master_ca_crt
+#      set_fact:
+#        k8s_master_ca_crt: "{{ k8s_get_master_ca_crt [ 'content' ] | b64decode }}"
+#
+#    - name: get master ca.key
+#      slurp:
+#        src: /etc/kubernetes/pki/ca.key
+#      register: k8s_get_master_ca_key
+#
+#    - name: set k8s_get_master_ca_key
+#      set_fact:
+#        k8s_master_ca_key: "{{ k8s_get_master_ca_key [ 'content' ] | b64decode }}"
+#
+#    - name: get master sa.key
+#      slurp:
+#        src: /etc/kubernetes/pki/sa.key
+#      register: k8s_get_master_sa_key
+#
+#    - name: set k8s_get_master_sa_key
+#      set_fact:
+#        k8s_master_sa_key: "{{ k8s_get_master_sa_key [ 'content' ] | b64decode }}"
+#
+#    - name: get master sa.pub
+#      slurp:
+#        src: /etc/kubernetes/pki/sa.pub
+#      register: k8s_get_master_sa_pub
+#
+#    - name: set k8s_get_master_sa_pub
+#      set_fact:
+#        k8s_master_sa_pub: "{{ k8s_get_master_sa_pub [ 'content' ] | b64decode }}"
+#
+#    - name: get master front-proxy-ca.crt
+#      slurp:
+#        src: /etc/kubernetes/pki/front-proxy-ca.crt
+#      register: k8s_get_front_proxy_ca_crt
+#
+#    - name: set k8s_master_front_proxy_ca_crt
+#      set_fact:
+#        k8s_master_front_proxy_ca_crt: "{{ k8s_get_front_proxy_ca_crt [ 'content' ] | b64decode }}"
+#
+#    - name: get master /etcd/ca.crt
+#      slurp:
+#        src: /etc/kubernetes/pki/etcd/ca.crt
+#      register: k8s_get_etcd_ca_crt
+#
+#    - name: set k8s_master_etcd_ca_crt
+#      set_fact:
+#        k8s_master_etcd_ca_crt: "{{ k8s_get_etcd_ca_crt [ 'content' ] | b64decode }}"
+#
+#    - name: get master /etcd/ca.key
+#      slurp:
+#        src: /etc/kubernetes/pki/etcd/ca.key
+#      register: k8s_get_etcd_ca_key
+#
+#    - name: set k8s_master_etcd_ca_key
+#      set_fact:
+#        k8s_master_etcd_ca_key: "{{ k8s_get_etcd_ca_key [ 'content' ] | b64decode }}"
+#
+#    - name: get master front-proxy-ca.key
+#      slurp:
+#        src: /etc/kubernetes/pki/front-proxy-ca.key
+#      register: k8s_get_front_proxy_ca_key
+#
+#    - name: set k8s_master_front_proxy_ca_key
+#      set_fact:
+#        k8s_master_front_proxy_ca_key: "{{ k8s_get_front_proxy_ca_key [ 'content' ] | b64decode }}"
+#
+#  any_errors_fatal: true
+#  when: inventory_hostname == k8s_master_node
+#
+#
+#- block:
+#
+#    - name: mkdir certs
+#      file:
+#        path: '{{ item }}'
+#        state: directory
+#      loop:
+#        - /etc/kubernetes/pki
+#        - /etc/kubernetes/pki/etcd
+#
+#    - name: create master certs
+#      copy:
+#        content: '{{ item.content }}'
+#        dest: '{{ item.dest }}'
+#      loop:
+#        - { content: "{{ hostvars [ k8s_master_node ] [ 'k8s_master_ca_crt' ] }}",             dest: /etc/kubernetes/pki/ca.crt             }
+#        - { content: "{{ hostvars [ k8s_master_node ] [ 'k8s_master_ca_key' ] }}",             dest: /etc/kubernetes/pki/ca.key             }
+#        - { content: "{{ hostvars [ k8s_master_node ] [ 'k8s_master_sa_key' ] }}",             dest: /etc/kubernetes/pki/sa.key             }
+#        - { content: "{{ hostvars [ k8s_master_node ] [ 'k8s_master_sa_pub' ] }}",             dest: /etc/kubernetes/pki/sa.pub             }
+#        - { content: "{{ hostvars [ k8s_master_node ] [ 'k8s_master_front_proxy_ca_crt' ] }}", dest: /etc/kubernetes/pki/front-proxy-ca.crt }
+#        - { content: "{{ hostvars [ k8s_master_node ] [ 'k8s_master_front_proxy_ca_key' ] }}", dest: /etc/kubernetes/pki/front-proxy-ca.key }
+#        - { content: "{{ hostvars [ k8s_master_node ] [ 'k8s_master_etcd_ca_crt' ] }}",        dest: /etc/kubernetes/pki/etcd/ca.crt        }
+#        - { content: "{{ hostvars [ k8s_master_node ] [ 'k8s_master_etcd_ca_key' ] }}",        dest: /etc/kubernetes/pki/etcd/ca.key        }
+#
+#    - name: init control planes
+#      shell: "{{ hostvars [ k8s_master_node ] [ 'k8s_join_command' ] }} --control-plane"
+#      async: 900
+#      poll: 1
+#      register: k8s_init_masters
+#
+#  any_errors_fatal: true
+#  when:
+#    - inventory_hostname != k8s_master_node
+#    - inventory_hostname in groups [ 'k8s_masters' ]
+#    - not k8s_check_init_masters.stat.exists
+
+
+- block:
+
+    - name: update etcd config
+      lineinfile:
+        path: /etc/kubernetes/manifests/etcd.yaml
+        regexp: '{{ item.regexp }}'
+        line: '{{ item.line }}'
+        insertafter: '- etcd'
+      loop:
+        - { regexp: 'initial-cluster=',       line: "    - --initial-cluster={% for host in k8s_master_list . split (',') %}https://{{ host }}.{{ k8s_kubeadm_init.service_dns_domain }}:8380{% if not loop.last %},{% endif %}{% endfor %}" }
+        - { regexp: 'initial-cluster-state=', line: "    - --initial-cluster-state=existing" }
+
+    - name: cronjob to renew certs
+      cron:
+        name: renew k8s certs
+        month: 6,12
+        day: 1
+        hour: 0
+        minute: 0
+        job: kubeadm alpha certs renew all
+
+  when: inventory_hostname in groups [ 'k8s_masters' ]
+
+
+- name: cronjob docker system prune
+  cron:
+    name: docker system prune
+    special_time: daily
+    job: /usr/bin/docker system prune -af --volumes

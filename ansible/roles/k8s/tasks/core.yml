@@ -1,0 +1,21 @@
+---
+
+- name: patch grub
+  lineinfile:
+    path: /etc/default/grub
+    regex: GRUB_CMDLINE_LINUX
+    line: 'GRUB_CMDLINE_LINUX="console=tty0 crashkernel=auto net.ifnames=0 console=ttyS0 cgroup.memory=nokmem"'
+  register: k8s_patch_grub
+
+
+- block:
+
+    - name: grub2 mkconfig
+      shell: grub2-mkconfig -o /boot/grub2/grub.cfg
+
+    - name: reboot
+      reboot:
+      async: 1
+      poll: 0
+
+  when: k8s_patch_grub is changed

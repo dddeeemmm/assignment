@@ -1,0 +1,108 @@
+replicaCount: 2
+
+image:
+  repository: nginx
+  pullPolicy: IfNotPresent
+  tag:        alpine
+
+service:
+  name: web
+  type: ClusterIP
+  port: 80
+
+resources:
+   limits:
+     cpu:    10m
+     memory: 8Mi
+   requests:
+     cpu:    10m
+     memory: 8Mi
+
+autoscaling:
+  enabled:                        false
+  minReplicas:                    1
+  maxReplicas:                    100
+  targetCPUUtilizationPercentage: 80
+
+volumeMounts:
+  - mountPath: /etc/nginx/nginx.conf
+    name:      nginxconf
+    subPath:   nginx.conf
+
+volumes:
+  - name:          nginxconf
+    configMap:
+      defaultMode: 0744
+      name:        nginxconf
+      items:
+        - key:     nginx.conf
+          path:    nginx.conf
+  - name:          robotstxt
+    configMap:
+      defaultMode: 0744
+      name:        robotstxt
+      items:
+        - key:     robots.txt
+          path:    robots.txt
+
+configmaps:
+  - name: nginxconf
+    data:
+      nginx.conf: |
+        user             nginx;
+        worker_processes 1;
+        error_log        /var/log/nginx/error.log warn;
+        pid              /var/run/nginx.pid;
+
+        events {
+            worker_connections 1024;
+        }
+
+        http {
+            include            /etc/nginx/mime.types;
+            default_type       application/octet-stream;
+            log_format         main  '$remote_addr - $remote_user [$time_local] "$request" '
+                                     '$status $body_bytes_sent "$http_referer" '
+                                     '"$http_user_agent" "$http_x_forwarded_for"';
+            access_log         /var/log/nginx/access.log  main;
+            sendfile           on;
+            #tcp_nopush        on;
+            keepalive_timeout  65;
+            #gzip              on;
+            include            /etc/nginx/conf.d/*.conf;
+        }
+  - name: robotstxt
+    data:
+      robots.txt: |
+        Mozilla/4.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1 (compatible; AdsBot-Google-Mobile; +http://www.google.com/mobile/adsbot.html)
+        User-agent: AdsBot-Google-Mobile-Apps
+        Mozilla/4.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)
+        User-agent: AdsBot-Google (+http://www.google.com/adsbot.html)
+        Mozilla/4.0 (Linux; Android 4.2.1; en-us; Nexus 5 Build/JOP40D) AppleWebKit/535.19 (KHTML, like Gecko; googleweblight) Chrome/38.0.1025.166 Mobile Safari/535.19
+        User-agent: APIs-Google (+https://developers.google.com/webmasters/APIs-Google.html)
+        Mozilla/4.0 (Linux; Android 5.0; SM-G920A) AppleWebKit (KHTML, like Gecko) Chrome Mobile Safari (compatible; AdsBot-Google-Mobile; +http://www.google.com/mobile/adsbot.html)
+        User-agent: FeedFetcher-Google; (+http://www.google.com/feedfetcher.html)
+        Mozilla/4.0 (Linux; Android 4.0; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.96 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)
+        User-agent: Googlebot-Image/1.0
+        Mozilla/4.0 (Linux; Android 4.0; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.96 Mobile Safari/537.36 (compatible; Google Search Console)
+        User-agent: Googlebot-News
+        Mozilla/4.0 (Linux; Android 4.0; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/W.X.Y.Z
+        User-agent: Googlebot-Video/1.0
+        Mozilla/4.0 (Linux; Android 4.0; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko)
+        User-agent: Googlebot/2.1 (+http://www.google.com/bot.html)
+        Mozilla/4.0 (Linux; Android 7.0; SM-G930V Build/NRD90M) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.125 Mobile Safari/537.36 (compatible; Google-Read-Aloud; +https://developers.google.com/search/docs/advanced/crawling/overview-google-crawlers)
+        User-agent: Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)
+        Mozilla/4.0 (Linux; Android 8.0; Pixel 2 Build/OPD3.170816.012; Storebot-Google/1.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Mobile Safari/537.36
+        Mozilla/4.0 (Linux; Android 11; Pixel 2; DuplexWeb-Google/1.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.193 Mobile Safari/537.36
+        Mozilla/4.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 Safari/537.36 (compatible; Google-Read-Aloud; +https://developers.google.com/search/docs/advanced/crawling/overview-google-crawlers)
+        Mozilla/4.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.75 Safari/537.36 Google Favicon
+        Mozilla/4.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko; Google Search Console) Chrome/41.0.2272.118 Safari/537.36
+        Mozilla/4.0 (X11; Linux x86_64; Storebot-Google/1.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36
+        User-agent: AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +http://www.google.com/bot.html) Chrome/W.X.Y.Z Safari/537.36
+        Allow: *
+        Disallow: /login/
+        Disallow: /card/
+        Disallow: /fotos/
+        Disallow: /temp/
+        Disallow: /search/
+        Disallow: /*.pdf$

@@ -1,22 +1,23 @@
-# Фиксируем версию провайдера, чтобы гарантировать совместимость
-# и стабильную работу написанной конфигурации
+# Select a specific provider version to ensure compatibility
+# and stable operation of the developed configuration
 terraform {
   required_providers {
     aws = {
-      # Используем локальное зеркало Облака КРОК
-      # как источник загрузки провайдера c2devel/croccloud
+      # Use the CROC Cloud local mirror
+      # to download c2devel/croccloud provider
       source  = "hc-registry.website.cloud.croc.ru/c2devel/croccloud"
       version = "4.14.0-CROC1"
     }
   }
 }
 
-# Подключаем и настраиваем провайдера для работы
-# со всеми сервисами Облака КРОК, кроме объектного хранилища
+# Connect and configure the provider to work
+# with all CROC Cloud services except for object storage
 provider "aws" {
   endpoints {
     ec2 = "https://api.cloud.croc.ru"
   }
+
   skip_credentials_validation = true
   skip_requesting_account_id  = true
   skip_region_validation      = true
@@ -27,13 +28,14 @@ provider "aws" {
   region     = "croc"
 }
 
-# Подключаем и настраиваем провайдера
-# для работы с объектным хранилищем облака
+# Connect and configure the provider to work
+# with the CROC Cloud object storage
 provider "aws" {
   alias = "noregion"
   endpoints {
     s3 = "https://storage.cloud.croc.ru"
   }
+
   skip_credentials_validation = true
   skip_requesting_account_id  = true
   skip_region_validation      = true

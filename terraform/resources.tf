@@ -102,6 +102,7 @@ resource "aws_instance" "vms" {
   instance_type = var.vm_instance_type
   # Assign the instance an internal IP address from the previously created subnet in the VPC
   subnet_id = aws_subnet.subnet.id
+  private_ip = "172.16.8.100"
   # Connect the internal security group to the created instance
   vpc_security_group_ids = [aws_security_group.ext.id]
   # Add the previously created public SSH key to the server

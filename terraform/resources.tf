@@ -141,24 +141,3 @@ resource "aws_instance" "vms" {
     }
   }
 }
-
-resource "aws_network_interface_sg_attachment" "sg_attachment" {
-  # Get the external security group ID
-  security_group_id    = aws_security_group.ext.id
-  # and the network interface ID of the first instance
-  network_interface_id = aws_instance.vms[0].primary_network_interface_id
-  # Assign a security group only after the creation of
-  # respective instance and security group
-  depends_on = [
-    aws_instance.vms,
-    aws_security_group.ext,
-  ]
-}
-
-resource "aws_eip_association" "eips_association" {
-  # Get the number of created EIPs
-  count         = var.eips_count
-  # and assign each of them to instances one by one
-  instance_id   = element(aws_instance.vms.*.id, count.index)
-  allocation_id = element(aws_eip.eips.*.id, count.index)
-}

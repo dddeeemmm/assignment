@@ -27,6 +27,13 @@ resource "aws_subnet" "subnet" {
   }
 }
 
+resource "aws_key_pair" "pubkey" {
+  # Specify the SSH key name (the value is taken from the pubkey_name variable)
+  key_name   = var.pubkey_name
+  # and public key content
+  public_key = var.public_key
+}
+
 resource "aws_eip" "eips" {
   # Specify the number of allocated EIPs in the eips_count variable –
   # this allows you to immediately allocate the required number of EIPs.
@@ -107,9 +114,11 @@ resource "aws_instance" "vms" {
   # Create an instance only after the creation of:
   # — subnet
   # — internal security group
+  # — public SSH key
   depends_on = [
     aws_subnet.subnet,
     aws_security_group.ext,
+    aws_key_pair.pubkey,
   ]
 
   tags = {

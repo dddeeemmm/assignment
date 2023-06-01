@@ -8,7 +8,7 @@ all:
       ansible_ssh_host:           'localhost'
 
     nginx:
-      ansible_ssh_host: '178.216.102.221'
+      ansible_ssh_host: '178.216.100.252'
 
   children:
     k8s_cluster:

@@ -1,0 +1,5 @@
+---
+
+- name: 'packages'
+  package:
+    name: '{{ nginx_packages }}'

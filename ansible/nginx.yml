@@ -1,0 +1,6 @@
+---
+
+- hosts: 'nginx'
+  roles:
+    - name:   'nginx'
+      become: 'on'

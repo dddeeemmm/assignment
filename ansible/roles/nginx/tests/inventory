@@ -1,0 +1,5 @@
+[ nginx ]
+nginx-1
+
+[ all:vars ]
+ansible_host={{inventory_hostname}}.domain.org

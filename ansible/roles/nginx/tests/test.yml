@@ -1,0 +1,6 @@
+---
+
+- hosts:  'nginx'
+  become: 'true'
+  roles:
+    - { name: 'nginx', tags: 'nginx' }

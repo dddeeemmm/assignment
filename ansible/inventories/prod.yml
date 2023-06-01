@@ -7,6 +7,9 @@ all:
       ansible_python_interpreter: '/usr/bin/python3'
       ansible_ssh_host:           'localhost'
 
+    nginx:
+      ansible_ssh_host: '178.216.102.221'
+
   children:
     k8s_cluster:
       children:

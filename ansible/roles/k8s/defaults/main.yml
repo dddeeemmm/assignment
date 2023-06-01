@@ -11,7 +11,7 @@ k8s_control_plane_port_c: '{{ k8s_kube_apiserver_port.c }}'
 
 k8s_kubeadm_init:
   pod_network_cidr:          '10.244.0.0/16'
-  apiserver_cert_extra_sans: '178.216.96.40'
+  apiserver_cert_extra_sans: '178.216.98.234'
   service_dns_domain:        'k8s.prod'
 
 k8s_kubeadm_init_command: 'kubeadm init --control-plane-endpoint "{{ ansible_default_ipv4.address }}" --pod-network-cidr={{ k8s_kubeadm_init.pod_network_cidr }} --service-dns-domain=k8s.test --apiserver-cert-extra-sans {{ k8s_kubeadm_init.apiserver_cert_extra_sans }}'

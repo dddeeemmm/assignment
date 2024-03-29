@@ -16,7 +16,8 @@ k8s_kubeadm_init:
 
 k8s_kubeadm_init_command: 'kubeadm init --control-plane-endpoint "{{ ansible_default_ipv4.address }}" --pod-network-cidr={{ k8s_kubeadm_init.pod_network_cidr }} --service-dns-domain=k8s.test --apiserver-cert-extra-sans {{ k8s_kubeadm_init.apiserver_cert_extra_sans }}'
 
-k8s_kubelet_extra_args:    '--image-pull-progress-deadline 5m0s'
+#k8s_kubelet_extra_args:    '--image-pull-progress-deadline 5m0s'
+k8s_kubelet_extra_args:    ''
 k8s_logs_exporter:         'fluentd'  # fluentd | filebeat
 k8s_logs_exporter_install: 'false'
 

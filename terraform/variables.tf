@@ -1,9 +1,16 @@
 variable "secret_key" {
-  description = "Enter the secret key"
+  description = "Enter the AWS secret key"
+  sensitive   = true
 }
 
 variable "access_key" {
-  description = "Enter the access key"
+  description = "Enter the AWS access key"
+  sensitive   = true
+}
+
+variable "region" {
+  description = "Enter the AWS region (us-east-1 by default)"
+  default     = "us-east-1"
 }
 
 variable "public_key" {
@@ -14,13 +21,9 @@ variable "pubkey_name" {
   description = "Enter the name of the public SSH key"
 }
 
-variable "bucket_name" {
-  description = "Enter the bucket name"
-}
-
 variable "az" {
-  description = "Enter availability zone (ru-msk-comp1p by default)"
-  default     = "ru-msk-comp1p"
+  description = "Enter availability zone (us-east-1a by default)"
+  default     = "us-east-1a"
 }
 
 variable "eips_count" {
@@ -29,37 +32,27 @@ variable "eips_count" {
 }
 
 variable "vms_count" {
-  description = "Enter the number of virtual machines to create (2 by default)"
-  default     = 2
+  description = "Enter the number of virtual machines to create (1 by default)"
+  default     = 1
 }
 
 variable "hostnames" {
   description = "Enter hostnames of VMs"
+  type        = list(string)
 }
 
 variable "allow_tcp_ports" {
-  description = "Enter TCP ports to allow connections to (22, 80, 443 by default)"
-  default     = [22, 80, 443]
+  description = "Enter TCP ports to allow connections to (22, 6443 by default)"
+  default     = [22, 6443]
+  type        = list(number)
 }
 
 variable "vm_template" {
-  description = "Enter the template ID to create a VM from (cmi-AC76609F [CentOS 8.2] by default)"
-  default     = "cmi-AC76609F"
+  description = "Enter the AMI ID to create a VM from (Amazon Linux 2 by default)"
+  default     = "ami-0c55b159cbfafe1f0"  # Example: Amazon Linux 2 in us-east-1
 }
 
 variable "vm_instance_type" {
-  description = "Enter the instance type for a VM (m5.2small by default)"
-  default     = "m5.2small"
-}
-
-variable "vm_volume_type" {
-  description = "Enter the volume type for VM disks (gp2 by default)"
-  default     = "gp2"
-}
-
-variable "vm_volume_size" {
-  # Default size and increment are specified for the gp2 volume type
-  # For other volume types, they may differ (for details, see the volumes documentation)
-  description = "Enter the volume size for VM disks (32 by default, in GiB, must be multiple of 32)"
-  default     = 32
+  description = "Enter the instance type for a VM (t3.micro by default)"
+  default     = "t3.micro"
 }

@@ -1,84 +1,55 @@
 resource "aws_vpc" "vpc" {
-  # Specify an IP address for the VPC network in CIDR notation (IP/Prefix)
-  cidr_block         = "172.16.8.0/24"
-  # Enable support for the domain name resolution using CROC Cloud DNS servers
-  enable_dns_support = true
+  cidr_block           = "172.16.8.0/24"
+  enable_dns_support   = true
+  enable_dns_hostnames = true
 
-  # Assign the Name tag to the created resource
   tags = {
-    Name = "My project"
+    Name = "assignment"
   }
 }
 
 resource "aws_subnet" "subnet" {
-  # Specify the availability zone, in which the subnet will be created
-  # Take its value from the az variable
   availability_zone = var.az
-  # Use the same CIDR block of IP addresses for the subnet as for the VPC
   cidr_block        = aws_vpc.vpc.cidr_block
-  # Specify the VPC where the subnet will be created
   vpc_id            = aws_vpc.vpc.id
-  # Create a subnet only after creating a VPC
   depends_on        = [aws_vpc.vpc]
 
-  # Include the az variable value and the Name tag for the VPC in the Name tag for the subnet
   tags = {
-    Name = "Subnet in ${var.az} for ${lookup(aws_vpc.vpc.tags, "Name")}"
+    Name = "assignment"
   }
 }
 
 resource "aws_key_pair" "pubkey" {
-  # Specify the SSH key name (the value is taken from the pubkey_name variable)
   key_name   = var.pubkey_name
-  # and public key content
   public_key = var.public_key
 }
 
 resource "aws_eip" "eips" {
-  # Specify the number of allocated EIPs in the eips_count variable –
-  # this allows you to immediately allocate the required number of EIPs.
-  # In our case, the address is allocated to the first server only
-  count = var.eips_count
-  # Allocate within our VPC
-  vpc = true
-  # and only after the VPC creation
+  count      = var.eips_count
+  domain     = "vpc"  # Updated for AWS terminology
   depends_on = [aws_vpc.vpc]
 
-  # Take the host name of the future VM from the hostnames variable with the array index
-  # as the value of the Name tag
   tags = {
-    Name = "${var.hostnames[count.index]}"
+    Name = "assignment"
   }
 }
 
-# Create a security group to enable access from the outside
 resource "aws_security_group" "ext" {
-  # Within our VPC
-  vpc_id = aws_vpc.vpc.id
-  # specify the security group name
-  name = "ext"
-  # and description
-  description = "External SG"
+  vpc_id      = aws_vpc.vpc.id
+  name        = "ext"
+  description = "assignment"
 
-  # Define inbound rules
   dynamic "ingress" {
-    # Specify the name of the variable, which will be used
-    # to iterate over all given ports
-    iterator = port
-    # Iterate over ports from the allow_tcp_ports port list
-    for_each = var.allow_tcp_ports
+    iterator  = port
+    for_each  = var.allow_tcp_ports
     content {
-      # Set the range of ports (in our case, it consists of one port),
-      from_port = port.value
-      to_port   = port.value
-      # protocol,
-      protocol = "tcp"
-      # and source IP address in CIDR notation (IP/Prefix)
+      from_port   = port.value
+      to_port     = port.value
+      protocol    = "tcp"
       cidr_blocks = ["0.0.0.0/0"]
     }
   }
 
-  # Define an outbound rule to enable all outbound IPv4 traffic
   egress {
     from_port   = 0
     to_port     = 0
@@ -89,33 +60,21 @@ resource "aws_security_group" "ext" {
   depends_on = [aws_vpc.vpc]
 
   tags = {
-    Name = "External SG"
+    Name = "assignment"
   }
 }
 
 resource "aws_instance" "vms" {
-  # Take the number of VMs to create from the vms_count variable
-  count = var.vms_count
-  # the image ID to create the instance is taken from the vm_template variable
-  ami = var.vm_template
-  # the instance type of the VM to be created is taken from the vm_instance_type variable
-  instance_type = var.vm_instance_type
-  # Assign the instance an internal IP address from the previously created subnet in the VPC
-  subnet_id = aws_subnet.subnet.id
-  private_ip = "172.16.8.100"
-  # Connect the internal security group to the created instance
-  vpc_security_group_ids = [aws_security_group.ext.id]
-  # Add the previously created public SSH key to the server
-  key_name = var.pubkey_name
-  # Do not allocate or assign an external Elastic IP to the instance
+  count                       = var.vms_count
+  ami                         = var.vm_template
+  instance_type               = var.vm_instance_type
+  subnet_id                   = aws_subnet.subnet.id
+  private_ip                  = "172.16.8.100"
+  vpc_security_group_ids      = [aws_security_group.ext.id]
+  key_name                    = var.pubkey_name
   associate_public_ip_address = true
-  # Activate monitoring of the instance
-  monitoring = true
+  monitoring                  = true
 
-  # Create an instance only after the creation of:
-  # — subnet
-  # — internal security group
-  # — public SSH key
   depends_on = [
     aws_subnet.subnet,
     aws_security_group.ext,
@@ -123,22 +82,6 @@ resource "aws_instance" "vms" {
   ]
 
   tags = {
-    Name = "VM for ${var.hostnames[count.index]}"
-  }
-
-  # Create a volume to be attached to an instance
-  ebs_block_device {
-    # Instruct the system to delete the volume along with the instance
-    delete_on_termination = true
-    # Specify the device name in the format "disk<N>",
-    device_name = "disk1"
-    # its type
-    volume_type = var.vm_volume_type
-    # and size
-    volume_size = var.vm_volume_size
-
-    tags = {
-      Name = "Disk for ${var.hostnames[count.index]}"
-    }
+    Name = "assignment"
   }
 }

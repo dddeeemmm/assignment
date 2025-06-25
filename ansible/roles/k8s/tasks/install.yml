@@ -1,56 +1,80 @@
 ---
 
-- name: add docker repo
-  get_url:
-    url: https://download.docker.com/linux/centos/docker-ce.repo
-    dest: /etc/yum.repos.d/docker-ce.repo
-  retries: 3
+- name: Update and upgrade system packages
+  ansible.builtin.apt:
+    update_cache: yes
+    upgrade: dist
+    cache_valid_time: 3600
 
-- name: install k8s_docker_packages
-  package:
-    name: '{{ k8s_docker_packages }}'
+- name: Install required packages
+  ansible.builtin.apt:
+    name: '{{ k8s_apt_packages }}'
+    state: present
 
-- name: load br_netfilter
-  modprobe:
-    name: br_netfilter
+- name: Create containerd configuration directory
+  ansible.builtin.file:
+    path: /etc/containerd
+    state: directory
+    mode: '0755'
 
-- name: add k8s repo
-  copy:
-    src: kubernetes.repo
-    dest: /etc/yum.repos.d/kubernetes.repo
+- name: Generate default containerd configuration
+  ansible.builtin.command: containerd config default
+  register: containerd_config
+  changed_when: false
 
-- name: install k8s_kubernetes_packages
-  package:
-    name: '{{ k8s_kubernetes_packages }}'
-    disable_excludes: kubernetes
+- name: Write containerd configuration
+  ansible.builtin.copy:
+    content: "{{ containerd_config.stdout | regex_replace('SystemdCgroup = false', 'SystemdCgroup = true') }}"
+    dest: /etc/containerd/config.toml
+    mode: '0644'
 
-- name: install k8s_pip_requirements
-  pip:
-    name: '{{ item.name }}'
-    version: '{{ item.version }}'
-    executable: pip3
-  loop: '{{ k8s_pip_requirements }}'
-  when: inventory_hostname in groups ['k8s_masters']
+- name: Enable and restart containerd
+  ansible.builtin.systemd:
+    name: containerd
+    enabled: yes
+    state: restarted
 
-- name: install k8s tools
-  get_url:
-    url: '{{ item }}'
-    dest: /bin/
-    mode: '+x'
-  loop: '{{ k8s_tools }}'
-  when: inventory_hostname in groups ['k8s_masters']
+- name: Create Kubernetes apt keyring directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
 
-- name: add specific flags for kubelet
-  template:
-    src: sysconfig_kubelet.j2
-    dest: /etc/sysconfig/kubelet
-    owner: root
-    group: root
-    mode: 0644
+- name: Download Kubernetes apt key
+  ansible.builtin.command:
+    cmd: curl -fsSL {{ k8s_release_repository }}/Release.key -o /tmp/kubernetes-release-key.asc
+    creates: /tmp/kubernetes-release-key.asc
+  changed_when: true
 
-- name: enable and start kubelet and docker
-  systemd:
-    name: '{{ item }}'
-    enabled: no
-    state: started
-  loop: [ kubelet, docker ]
+- name: Dearmor Kubernetes apt key
+  ansible.builtin.command: gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg /tmp/kubernetes-release-key.asc
+  args:
+    creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+  changed_when: true
+
+- name: Add Kubernetes apt repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] {{ k8s_release_repository }}/ /"
+    state: present
+    filename: kubernetes
+
+- name: Update apt cache after adding repository
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: Install Kubernetes components
+  ansible.builtin.apt:
+    name:
+      - kubelet={{ k8s_version }}
+      - kubeadm={{ k8s_version }}
+      - kubectl={{ k8s_version }}
+    state: present
+
+- name: Hold Kubernetes packages
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop:
+    - kubelet
+    - kubeadm
+    - kubectl

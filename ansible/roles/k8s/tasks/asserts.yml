@@ -1,8 +1,8 @@
 ---
 
-- name: check distribution
+- name: Check distribution
   fail:
-    msg: requirement Centos 7 distribution
+    msg: requirement Ubuntu Server 22.04 distribution
   when:
-    - ansible_distribution | lower != 'centos'
-    - ansible_distribution_major_version | int != 7
+    - ansible_distribution | lower != 'ubuntu'
+    - ansible_distribution_major_version | int != 22.04

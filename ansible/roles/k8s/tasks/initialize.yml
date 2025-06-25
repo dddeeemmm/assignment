@@ -1,80 +1,32 @@
 ---
 
-- name: check init masters
-  stat:
-    path: /etc/kubernetes/admin.conf
-  when: inventory_hostname in groups [ 'k8s_masters' ]
-  register: k8s_check_init_masters
+- name: Initialize Kubernetes cluster
+  ansible.builtin.command: '{{ k8s_init_command }}'
+  args:
+    creates: /etc/kubernetes/admin.conf
+  register: kubeadm_init
+  when: inventory_hostname == groups['k8s_masters'][0]
 
+- name: Install CNI
+  ansible.builtin.command: kubectl apply -f {{ k8s_cni_manifest }}
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  when: inventory_hostname == groups['k8s_masters'][0]
 
-- block:
+- name: Save kubeadm join command
+  ansible.builtin.copy:
+    content: "{{ kubeadm_init.stdout | regex_findall('kubeadm join [^\n]+') | first }}"
+    dest: /tmp/kubeadm_join_command
+    mode: '0600'
+  when: inventory_hostname == groups['k8s_masters'][0]
 
-    - name: init first master
-      shell: '{{ k8s_kubeadm_init_command }}'
-      async: 900
-      poll: 1
-      register: k8s_init_first_master
+- name: Fetch kubeadm join command from control plane
+  ansible.builtin.slurp:
+    src: /tmp/kubeadm_join_command
+  register: kubeadm_join
+  when: inventory_hostname != groups['k8s_masters'][0]
+  delegate_to: "{{ groups['k8s_masters'][0] }}"
 
-    - debug:
-        msg: '{{ k8s_init_first_master.stdout }}'
-
-  any_errors_fatal: true
-  when:
-    - inventory_hostname == k8s_master_node
-    - not k8s_check_init_masters.stat.exists
- 
-- block:
-
-    - name: mkdir /etc/kubernetes/addons
-      file:
-        path: /etc/kubernetes/addons
-        state: directory
-
-    - name: copy addons manifests
-      template:
-        src: '{{ item }}'
-        dest: /etc/kubernetes/addons/{{ item | basename | regex_replace ( '\.j2$', '' ) }}
-      loop:
-        - kube-flannel.yaml.j2
-        - kube-state-metrics.yaml.j2
-
-    - name: install addons
-      environment:
-        KUBECONFIG: /etc/kubernetes/admin.conf
-      shell: kubectl apply -f /etc/kubernetes/addons
-  
-  any_errors_fatal: true
-  when:  
-    - k8s_addons_install | bool
-    - inventory_hostname == k8s_master_node
-
-
-- block:
-
-    - name: update etcd config
-      lineinfile:
-        path: /etc/kubernetes/manifests/etcd.yaml
-        regexp: '{{ item.regexp }}'
-        line: '{{ item.line }}'
-        insertafter: '- etcd'
-      loop:
-        - { regexp: 'initial-cluster=',       line: "    - --initial-cluster={% for host in k8s_master_list . split (',') %}https://{{ host }}.{{ k8s_kubeadm_init.service_dns_domain }}:8380{% if not loop.last %},{% endif %}{% endfor %}" }
-        - { regexp: 'initial-cluster-state=', line: "    - --initial-cluster-state=existing" }
-
-    - name: cronjob to renew certs
-      cron:
-        name: renew k8s certs
-        month: 6,12
-        day: 1
-        hour: 0
-        minute: 0
-        job: kubeadm alpha certs renew all
-
-  when: inventory_hostname in groups [ 'k8s_masters' ]
-
-
-- name: cronjob docker system prune
-  cron:
-    name: docker system prune
-    special_time: daily
-    job: /usr/bin/docker system prune -af --volumes
+- name: Join worker nodes to cluster
+  ansible.builtin.command: "{{ kubeadm_join.content | b64decode }}"
+  when: inventory_hostname != groups['k8s_masters'][0]

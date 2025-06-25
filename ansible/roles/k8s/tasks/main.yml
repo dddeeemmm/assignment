@@ -2,7 +2,6 @@
 
 - block:
     - include: 'asserts.yml'
-    - include: 'core.yml'
     - include: 'install.yml'
   when: k8s_install | bool
 

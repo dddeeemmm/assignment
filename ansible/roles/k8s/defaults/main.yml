@@ -1,36 +1,10 @@
 ---
 
-k8s_install:        'true'
-k8s_addons_install: 'true'
+k8s_install: 'on'
 
-k8s_master_list:          "{% for host in play_hosts | sort %}{% if host in groups [ 'k8s_masters' ] %}{{ host }}{% if loop.index < 3 %},{% endif %}{% endif %}{% endfor %}"
-k8s_master_node:          "{{ k8s_master_list . split (',') | first }}"
-k8s_control_plane_port_a: '{{ k8s_kube_apiserver_port.a }}'
-k8s_control_plane_port_b: '{{ k8s_kube_apiserver_port.b }}'
-k8s_control_plane_port_c: '{{ k8s_kube_apiserver_port.c }}'
+k8s_pod_network_cidr:          '192.168.0.0/16'
+k8s_domain:                    'k8s.prod'
+#k8s_apiserver_cert_extra_sans: '{{ ansible_default_ipv4.address }}'
+k8s_apiserver_cert_extra_sans: '54.209.196.52'
 
-k8s_kubeadm_init:
-  pod_network_cidr:          '10.244.0.0/16'
-  apiserver_cert_extra_sans: '178.216.98.234'
-  service_dns_domain:        'k8s.prod'
-
-k8s_kubeadm_init_command: 'kubeadm init --control-plane-endpoint "{{ ansible_default_ipv4.address }}" --pod-network-cidr={{ k8s_kubeadm_init.pod_network_cidr }} --service-dns-domain=k8s.test --apiserver-cert-extra-sans {{ k8s_kubeadm_init.apiserver_cert_extra_sans }}'
-
-#k8s_kubelet_extra_args:    '--image-pull-progress-deadline 5m0s'
-k8s_kubelet_extra_args:    ''
-k8s_logs_exporter:         'fluentd'  # fluentd | filebeat
-k8s_logs_exporter_install: 'false'
-
-k8s_fluentd_type:      '' # elasticsearch | graylog
-k8s_fluentd_host:      ''
-k8s_fluentd_port:      ''
-k8s_fluentd_protocol:  'tcp'
-k8s_fluentd_es_scheme: 'http'
-
-k8s_kube_apiserver_port:              '6443'
-k8s_kube_state_metrics_port:          '32767'
-k8s_kube_metrics_server_exprter_port: '32766'
-
-k8s_consul_client_install: 'true'
-k8s_prometheus_sd_install: 'true'
-
+k8s_cni_manifest: 'https://raw.githubusercontent.com/projectcalico/calico/v3.28.2/manifests/calico.yaml'

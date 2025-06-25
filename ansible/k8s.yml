@@ -1,5 +1,10 @@
 ---
 
+- hosts:        'k8s_masters'
+  gather_facts: 'no'
+  tasks:
+    - wait_for_connection:
+
 - hosts: 'k8s_masters'
   roles:
     - name:   'k8s'

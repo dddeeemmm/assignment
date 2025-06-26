@@ -4,5 +4,4 @@ k8s_version:            "1.30.0-1.1"
 k8s_release_repository: 'https://pkgs.k8s.io/core:/stable:/v1.30/deb'
 k8s_apt_packages:       ['apt-transport-https', 'ca-certificates', 'curl', 'gnupg', 'containerd']
 
-k8s_init_command1: 'kubeadm init --pod-network-cidr={{ k8s_pod_network_cidr }}'
 k8s_init_command:  'kubeadm init --control-plane-endpoint {{ ansible_default_ipv4.address }} --pod-network-cidr={{ k8s_pod_network_cidr }} --service-dns-domain={{ k8s_domain }} --apiserver-cert-extra-sans {{ k8s_apiserver_cert_extra_sans }}'

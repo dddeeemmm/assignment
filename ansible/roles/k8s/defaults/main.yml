@@ -4,7 +4,6 @@ k8s_install: 'on'
 
 k8s_pod_network_cidr:          '192.168.0.0/16'
 k8s_domain:                    'k8s.prod'
-#k8s_apiserver_cert_extra_sans: '{{ ansible_default_ipv4.address }}'
-k8s_apiserver_cert_extra_sans: '54.209.196.52'
+k8s_apiserver_cert_extra_sans: '{{ ansible_default_ipv4.address }}'
 
 k8s_cni_manifest: 'https://raw.githubusercontent.com/projectcalico/calico/v3.28.2/manifests/calico.yaml'

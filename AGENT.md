@@ -1,32 +1,113 @@
-# AI Agent Instructions (Repo policy)
+# AI Agent Instructions
 
-## Context
+## Repository Context
+
 This repository is used as an interview assignment template.
-It intentionally contains embedded bugs, code smells, and failing tests on purpose.
 
-## Default behavior (VERY IMPORTANT)
-- Do NOT propose to "fix" issues by default.
-- Do NOT open PR-style patch suggestions unless explicitly requested.
-- Assume that suspicious code, failing tests, or security findings may be intentional parts of the assignment.
+It intentionally contains embedded bugs, edge cases, code smells,
+and possibly failing tests on purpose.
 
-## What you SHOULD do by default
-- Ask what the candidate task is (or what exactly I want to evaluate).
-- Provide analysis, explanations, debugging strategies, and hints.
-- Offer multiple hypotheses and ways to validate them.
-- If you suggest changes, present them as options and wait for confirmation.
+Do NOT assume that something is broken unintentionally.
 
-## When you MAY provide actual fixes/patches
-Only when I explicitly say: "do" (or "apply patch").
-If I do, then:
-- Make minimal, targeted changes.
-- Keep the intentional nature in mind: do not “clean up everything”.
-- Explain exactly what you changed and why.
+---
 
-## Safety / secrets
-- Never ask for or include secrets (tokens, passwords, private keys).
-- Do not suggest committing secrets to git.
-- Prefer env vars, secret stores, and CI secrets.
+## Default Behavior (Critical)
 
-## Output style
-- Keep responses short and step-by-step.
-- If the goal is unclear, ask 1-2 clarifying questions max.
+By default you MUST:
+
+- Treat suspicious code and failing tests as potentially intentional.
+- Avoid proposing automatic fixes.
+- Avoid large refactors or cleanup suggestions.
+- Avoid PR-style patches unless explicitly requested.
+
+If something looks wrong, first:
+- Explain what you observe.
+- Provide analysis.
+- Offer possible interpretations.
+- Ask what the evaluation goal is.
+
+---
+
+## Patch Mode
+
+You may only apply actual fixes if I explicitly say:
+
+"do"
+or
+"apply patch"
+
+When patch mode is enabled:
+
+- Make minimal and targeted changes only.
+- Do NOT clean up unrelated parts.
+- Do NOT improve formatting or refactor beyond the scope.
+- Clearly explain:
+  - what changed
+  - why it changed
+  - what impact it has
+
+---
+
+## Command Execution Reporting
+
+When executing shell commands or tools:
+
+Always show:
+- the exact command
+- working directory (cwd)
+- exit code
+
+If exit code == 0:
+- Do NOT show stdout.
+- Do NOT show stderr.
+- Provide only a short success summary.
+
+If exit code != 0:
+- Show full stderr (untrimmed).
+- Do NOT summarize or truncate stderr.
+- Do NOT replace stderr with a textual explanation.
+- Show stdout only if it is strictly necessary to understand the failure.
+
+---
+
+## API / HTTP Output Safety
+
+When showing HTTP/API responses:
+
+- Show status code.
+- Show relevant headers.
+- Redact:
+  - Authorization headers
+  - tokens
+  - API keys
+  - cookies
+  - anything that looks like credentials
+
+Limit body output unless full body is explicitly requested.
+
+---
+
+## Change Reporting
+
+After modifying files:
+
+- Show which files changed.
+- Provide a concise diff summary.
+- Do not perform unrelated cleanup.
+
+---
+
+## Security Rules
+
+- Never request or include secrets.
+- Never suggest committing secrets to git.
+- Prefer environment variables and secret stores.
+- Assume production safety principles.
+
+---
+
+## Output Style
+
+- Keep responses structured and concise.
+- Prefer step-by-step reasoning.
+- If intent is unclear, ask 1–2 clarifying questions max.

@@ -1,0 +1,8 @@
+---
+postgresql_packages_debian:
+  - postgresql
+  - postgresql-contrib
+
+postgresql_packages_redhat:
+  - postgresql
+  - postgresql-server

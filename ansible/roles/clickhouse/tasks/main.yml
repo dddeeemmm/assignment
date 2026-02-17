@@ -1,0 +1,64 @@
+---
+- name: Ensure apt transport dependencies are present (Debian/Ubuntu)
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+    state: present
+    update_cache: true
+  when: ansible_facts.os_family == "Debian"
+
+- name: Install ClickHouse GPG keyring (Debian/Ubuntu)
+  ansible.builtin.command: >
+    /bin/sh -c
+    "curl -fsSL 'https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key'
+    | gpg --dearmor -o /usr/share/keyrings/clickhouse-keyring.gpg"
+  args:
+    creates: /usr/share/keyrings/clickhouse-keyring.gpg
+  when: ansible_facts.os_family == "Debian"
+
+- name: Get system architecture (Debian/Ubuntu)
+  ansible.builtin.command: dpkg --print-architecture
+  register: clickhouse_arch
+  changed_when: false
+  when: ansible_facts.os_family == "Debian"
+
+- name: Add ClickHouse apt repo (Debian/Ubuntu)
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/clickhouse-keyring.gpg arch={{ clickhouse_arch.stdout }}] https://packages.clickhouse.com/deb stable main"
+    state: present
+    filename: clickhouse
+  when: ansible_facts.os_family == "Debian"
+
+- name: Install ClickHouse packages (Debian/Ubuntu)
+  ansible.builtin.apt:
+    name: "{{ clickhouse_packages_debian }}"
+    state: present
+    update_cache: true
+  when: ansible_facts.os_family == "Debian"
+  notify: restart clickhouse
+
+- name: Add ClickHouse yum repo (RHEL/Amazon)
+  ansible.builtin.yum_repository:
+    name: clickhouse
+    description: ClickHouse Repository
+    baseurl: https://packages.clickhouse.com/rpm/stable/
+    gpgcheck: true
+    gpgkey: https://packages.clickhouse.com/rpm/stable/repodata/repomd.xml.key
+    enabled: true
+  when: ansible_facts.os_family == "RedHat"
+
+- name: Install ClickHouse packages (RHEL/Amazon)
+  ansible.builtin.package:
+    name: "{{ clickhouse_packages_redhat }}"
+    state: present
+  when: ansible_facts.os_family == "RedHat"
+  notify: restart clickhouse
+
+- name: Ensure ClickHouse service is running
+  ansible.builtin.service:
+    name: clickhouse-server
+    enabled: true
+    state: started

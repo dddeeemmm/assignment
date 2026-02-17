@@ -1,0 +1,11 @@
+---
+- name: Install PostgreSQL on DBMS hosts
+  hosts: dbms
+  become: true
+  roles:
+    - role: postgresql
+      tags: postgresql
+    - role: clickhouse
+      tags: clickhouse
+    - role: mongodb
+      tags: mongodb

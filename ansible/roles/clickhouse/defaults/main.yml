@@ -1,0 +1,8 @@
+---
+clickhouse_packages_debian:
+  - clickhouse-server
+  - clickhouse-client
+
+clickhouse_packages_redhat:
+  - clickhouse-server
+  - clickhouse-client

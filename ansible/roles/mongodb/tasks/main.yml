@@ -1,0 +1,40 @@
+---
+- name: Ensure MongoDB dependencies are present (Debian/Ubuntu)
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+    state: present
+    update_cache: true
+  when: ansible_facts.os_family == "Debian"
+
+- name: Install MongoDB GPG keyring (Debian/Ubuntu)
+  ansible.builtin.command: >
+    /bin/sh -c
+    "curl -fsSL 'https://pgp.mongodb.com/server-{{ mongodb_version }}.asc'
+    | gpg --dearmor -o /usr/share/keyrings/mongodb-server-{{ mongodb_version }}.gpg"
+  args:
+    creates: "/usr/share/keyrings/mongodb-server-{{ mongodb_version }}.gpg"
+  when: ansible_facts.os_family == "Debian"
+
+- name: Add MongoDB apt repo (Debian/Ubuntu)
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/mongodb-server-{{ mongodb_version }}.gpg arch=amd64,arm64] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/{{ mongodb_version }} multiverse"
+    state: present
+    filename: mongodb-org-{{ mongodb_version }}
+  when: ansible_facts.os_family == "Debian"
+
+- name: Install MongoDB packages (Debian/Ubuntu)
+  ansible.builtin.apt:
+    name: "{{ mongodb_packages_debian }}"
+    state: present
+    update_cache: true
+  when: ansible_facts.os_family == "Debian"
+  notify: restart mongod
+
+- name: Ensure MongoDB service is running
+  ansible.builtin.service:
+    name: mongod
+    enabled: true
+    state: started

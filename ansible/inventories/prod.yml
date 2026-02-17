@@ -10,6 +10,9 @@ all:
     nginx:
       ansible_ssh_host: ''
 
+    dbms:
+      ansible_ssh_host: ''
+
   children:
     k8s_cluster:
       children:
